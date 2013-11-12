@@ -37,6 +37,9 @@ use warnings;
 # Anders Ossowicki <and@vmn.dk>.
 
 
+our $irinyisek = "";
+our $rektorisok = "";
+
 
 ## Set basic stuff like vars and the like up
 
@@ -49,7 +52,7 @@ $SIG{'INT'} = 'ABORT';
 use constant STARTTIME		=> time;
 use constant SCRIPT_NAME 	=> "Anna^ IRC Bot";
 use constant SCRIPT_VERSION 	=> "0.40-svn";
-use constant SCRIPT_RELEASE 	=> "hu May 17 17:02:20 CEST 2007";
+use constant SCRIPT_RELEASE 	=> "Thu May 17 17:02:20 CEST 2007";
 use constant SCRIPT_SYSTEM 	=> `uname -sr`;
 use constant DB_VERSION 	=> 2;
 
@@ -261,6 +264,8 @@ POE::Session->create(
 		irc_isupport		=> sub { "DUMMY" },
 		irc_ping		=> sub { "DUMMY" },
 		irc_registered		=> sub { "DUMMY" },
+
+		meeting			=> \&do_meeting,
 	},
 );
 
@@ -724,6 +729,18 @@ sub parse_message {
 		$out = "Stupid human!";
 		return $out;
 	}
+	if ($msg =~ /.*faszom.*/i) {
+		$out = $nick . ", ne beszélj csúnyán!";
+		return $out;
+	}
+	if ($msg =~ /.*pit..?kol..*/i) {
+		$out = "Szabolcs, ne beszélj csúnyán!";
+		return $out;
+	}
+	if ($msg =~ /^([^ :,-]*).* ping/i) {
+		$out = bot_lastseen($nick, $1, $type);
+		return $out;
+	}
 	if ($msg =~ /dance/i) {
 		$irc->delay(['ctcp' => $server{'channel'} => 'ACTION dances o//'], 1);
 		$irc->delay(['ctcp' => $server{'channel'} => 'ACTION dances \\\\o'], 2);
@@ -745,8 +762,13 @@ sub parse_message {
 		return $nick . ": ".$rep[rand scalar @rep]."!";
 	}
 
-	if ($msg =~ /^\Q$server{'nick'}\E[ :,-]+.*\?$/) {
+	if ($msg =~ /^\Q$server{'nick'}\E[ :,-]+.*\?.*$/) {
 		$out = $nick . ": ".bot_answer();
+		return $out;
+	}
+
+	if ($msg =~ /^\Q$server{'nick'}\E[ :,-]+hell?..*$/) {
+		$out = "Szia " . $nick . "!";
 		return $out;
 	}
 
@@ -807,8 +829,49 @@ sub parse_message {
 		$out = bot_lastseen($nick, $1, $type);
 	} elsif ($cmd =~ /^meh$/i) {
 		$out = "meh~";
+	} elsif ($cmd =~ /^ping$/i) {
+		$out = "pong~";
 	} elsif ($cmd =~ /^op$/i) {
 		$out = bot_op($from, $heap);
+	}
+
+
+	elsif ($cmd =~ /^taliga\s+(.*)$/i) {
+		$out = bot_lart($nick, $1);
+	} elsif ($cmd =~ /^irinyi$/i) {
+		$out = $irinyisek;
+	} elsif ($cmd =~ /^rektori$/i) {
+		$out = $rektorisok;
+	} elsif ($cmd =~ /^all$/i) {
+		$out = $irinyisek . ", " . $rektorisok;
+	} elsif ($cmd =~ /^irinyi\s+(.*)$/i) {
+		$out = $irinyisek . ": " . $1;
+	} elsif ($cmd =~ /^rektori\s+(.*)$/i) {
+		$out = $rektorisok . ": " . $1;
+	} elsif ($cmd =~ /^all\s+(.*)$/i) {
+		$out = $irinyisek . ", " . $rektorisok . ": " . $1;
+	} elsif ($cmd =~ /^kill\s+(.*)$/i) {
+		$irc->yield(ctcp => $server{'channel'} => 'ACTION egy jól képzett nidzsát indított' => $1 => 'felé...');
+		return;
+	} elsif ($cmd =~ /^sendmajom\s+(.*)$/i) {
+		if ($1 eq "Pannika") {
+			$irc->yield(ctcp => $server{'channel'} => 'ACTION egy jól képzett nidzsát indított' => $nick => 'felé...');
+		}
+		else {
+			$irc->yield(ctcp => $server{'channel'} => 'ACTION küldött egy taliga apró majmot' => $1 => 'számára...');
+		}
+		return;
+	} elsif ($cmd =~ /^sendnigger\s+(.*)$/i) {
+		if ($1 eq "Pannika") {
+			$irc->yield(ctcp => $server{'channel'} => 'ACTION egy jól képzett nidzsát indított' => $nick => 'felé...');
+		}
+		else {
+			$irc->yield(ctcp => $server{'channel'} => 'ACTION egy vagon négert rendelt' => $1 => 'számára...');
+		}
+		return;
+	} elsif ($cmd =~ /^viszlat\s+(.*)$/i) {
+		$irc->yield(kick => $server{'channel'} => $1 => $nick);
+		return;
 	}
 
 	return $out;
@@ -1127,35 +1190,40 @@ sub bot_googlesearch {
 	$ua->agent("Mozilla/5.0" . $ua->agent);
 	
 	# Search
-	my $request = new HTTP::Request GET => "http://www.google.com/search?hl=en&ie=ISO-8859-1&q=".$query;
+	# my $request = new HTTP::Request GET => "http://www.google.com/search?hl=en&ie=ISO-8859-1&q=".$query;
+	my $request = new HTTP::Request GET => "https://www.google.hu/search?ie=utf-8&oe=utf-8&q=".$query;
 	my $get = $ua->request($request);
 	my $content = $get->content;
 
 	# Format results. Replace <br> with newlines and remove tags
+	$content =~ s/\<script.*?\>[\s\S.]*?\<\/script\>//g;
+	$content =~ s/\<style.*?\>[\s\S.]*?\<\/style\>//g;
+	$content =~ s/\<h3.class\=\"r\"\>(.*?)\<a.+?\>(.*?)\<\/a\>(.*?)\<\/h3\>/\n\|\|::\2::\|\|\n/g;
+	# $content =~ s/[\s\S.]*?\<h3.class\=\"r\"\>\<a href\=\"(.+?)\" (.+?)\>(.*?)\<\/a\>(.*?)\<\/h3\>[\s\S.]*?/\n\|\|::\3 - \1::\|\|/g;
+	$content =~ s/^\<[\s\S]*?\|\|:://g;
+	$content =~ s/::\|\|[\s\S]\<[^e].*//g;
+	$content =~ s/::\|\|//g;
+	$content =~ s/\|\|:://g;
+	$content =~ s/\<.+?\>//g;
 	$content =~ s/\<br\>/\n/g;
 	$content =~ s/\<.+?\>//sg;
 	$content =~ s/#//s;
 
 	# Make array with all results
-	my @lines = split('\n', $content);
-	my @pages = grep(/Similar( |&nbsp;)pages/, @lines);
+	# my @lines = split('\n', $content);
+	# my @pages = grep(/Similar( |&nbsp;)pages/, @lines);
+	my @pages = split('\n', $content);
 	
 	return "Sorry - google didn't return any results :(" if (scalar(@pages) == 0);
 	
-	# Remove empty results and decode entities.
 	my $i;
-	for ($i = 0; $i < scalar(@pages); $i++) {
-		$pages[$i] =~ s/\s+.*//g;
-		$pages[$i] = decode_entities($pages[$i]);
-		if ($pages[$i] =~ /(^\n|\s+\n)/){ splice(@pages, $i, 1) };
-		if ($pages[$i] !~ /\./){ splice(@pages, $i, 1) };
-	}
-	
+	my $darab = scalar(@pages);
+	$darab = 5 if ($results > 5);
 	my $out;
-	for ($i = 0; $i <= $results; $i++) {
+	for ($i = 0; $i <= $darab; $i++) {
 		# Return if no more results were returned
 		return $out if (!$pages[$i]);
-		$out .= "http://".$pages[$i]."\n";
+		$out .= $pages[$i]."\n";
 	}
 	return $out;
 }
@@ -1853,6 +1921,28 @@ sub do_autoping {
 	$kernel->delay(autoping => 300);
 }
 
+## do_meeting
+# 
+sub do_meeting {
+	my ($kernel, $heap) = @_[KERNEL, HEAP];
+
+	my ($sec,$min,$hour,$mday,$mon,$year, $wday,$yday,$isdst) = localtime time;
+	# Déli meeting: Irinyi
+	if ($hour == 11 && $min == 40) {
+		my $szoveg = "Déli meeting! \($irinyisek\)";
+		$irc->yield(privmsg => $server{'channel'} => $szoveg);
+	}
+
+	# Déli meeting: Rektori
+	if ($hour == 11 && $min == 48) {
+		my $szoveg = "Déli meeting! \($rektorisok\)";
+		$irc->yield(privmsg => $server{'channel'} => $szoveg);
+	}
+
+	$heap->{seen_traffic} = 0;
+	$kernel->delay(meeting => 60);
+}
+
 ## do_connect
 # Connect us!
 sub do_connect {
@@ -2112,6 +2202,7 @@ sub on_connected {
 	
 	$_[HEAP]->{seen_traffic} = 1;
 	$kernel->delay(autoping => 300);
+	$kernel->delay(meeting => 60);
 
 	irclog('status' => sprintf "Connected to %s", $server{'server'});
 	printf "[%s] %s!%s Connected to %s\n", print_time(), colour('-', '94'),
