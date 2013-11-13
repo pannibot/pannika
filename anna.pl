@@ -1926,17 +1926,30 @@ sub do_autoping {
 sub do_meeting {
 	my ($kernel, $heap) = @_[KERNEL, HEAP];
 
-	my ($sec,$min,$hour,$mday,$mon,$year, $wday,$yday,$isdst) = localtime time;
-	# Déli meeting: Irinyi
-	if ($hour == 11 && $min == 40) {
-		my $szoveg = "Déli meeting! \($irinyisek\)";
-		$irc->yield(privmsg => $server{'channel'} => $szoveg);
-	}
+	my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime time;
 
-	# Déli meeting: Rektori
-	if ($hour == 11 && $min == 48) {
-		my $szoveg = "Déli meeting! \($rektorisok\)";
-		$irc->yield(privmsg => $server{'channel'} => $szoveg);
+	if ($wday == 3) {	// szerda
+		# Heti meeting: Irinyi
+		if ($hour == 13 && $min == 45) {
+			my $szoveg = "Nagymeeting! \($irinyisek\)";
+			$irc->yield(privmsg => $server{'channel'} => $szoveg);
+		}
+		# Heti meeting: Rektori
+		if ($hour == 13 && $min == 55) {
+			my $szoveg = "Nagymeeting! \($rektorisok\)";
+			$irc->yield(privmsg => $server{'channel'} => $szoveg);
+		}
+	} else {
+		# Déli meeting: Irinyi
+		if ($hour == 11 && $min == 40) {
+			my $szoveg = "Déli meeting! \($irinyisek\)";
+			$irc->yield(privmsg => $server{'channel'} => $szoveg);
+		}
+		# Déli meeting: Rektori
+		if ($hour == 11 && $min == 48) {
+			my $szoveg = "Déli meeting! \($rektorisok\)";
+			$irc->yield(privmsg => $server{'channel'} => $szoveg);
+		}
 	}
 
 	$heap->{seen_traffic} = 0;
