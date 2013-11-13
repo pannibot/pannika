@@ -1929,20 +1929,45 @@ sub do_meeting {
 	my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime time;
 	my $szoveg;
 
-	if ($wday != 0 & $wday != 6) # hétköznap
+	given ($wday)
 	{
-		if ($wday == 3) {	# szerda
+		when(0)
+		{
+			# hétvége
+		}
+		when(6)
+		{
+			# hétvége
+		}
+		when(5)
+		{
+			# péntek
+			# Szeminárium: Irinyi
+			if ($hour == 10 && $min == 20) {
+				$szoveg = "Nagymeeting! \($irinyisek\)";
+				$irc->yield(privmsg => $server{'channel'} => $szoveg);
+			}
+			# Szeminárium: Rektori
+			if ($hour == 10 && $min == 28) {
+				$szoveg = "Nagymeeting! \($rektorisok\)";
+				$irc->yield(privmsg => $server{'channel'} => $szoveg);
+			}
+		}
+		when(3)	# szerda
+		{
 			# Heti meeting: Irinyi
 			if ($hour == 13 && $min == 45) {
 				$szoveg = "Nagymeeting! \($irinyisek\)";
 				$irc->yield(privmsg => $server{'channel'} => $szoveg);
 			}
 			# Heti meeting: Rektori
-			if ($hour == 13 && $min == 55) {
+			if ($hour == 13 && $min == 58) {
 				$szoveg = "Nagymeeting! \($rektorisok\)";
 				$irc->yield(privmsg => $server{'channel'} => $szoveg);
 			}
-		} else {
+		}
+		default
+		{
 			# Déli meeting: Irinyi
 			if ($hour == 11 && $min == 40) {
 				$szoveg = "Déli meeting! \($irinyisek\)";
