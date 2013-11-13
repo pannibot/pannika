@@ -1939,9 +1939,8 @@ sub do_meeting {
 		{
 			# hétvége
 		}
-		when(5)
+		when(5) # péntek
 		{
-			# péntek
 			# Szeminárium: Irinyi
 			if ($hour == 10 && $min == 20) {
 				$szoveg = "Nagymeeting! \($irinyisek\)";
