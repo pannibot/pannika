@@ -1,6 +1,7 @@
 #!/usr/bin/perl
 use strict;
 use warnings;
+use feature "switch";
 
 ## Anna^ IRC Bot
 
@@ -852,6 +853,9 @@ sub parse_message {
 		$out = $irinyisek . ", " . $rektorisok . ": " . $1;
 	} elsif ($cmd =~ /^kill\s+(.*)$/i) {
 		$irc->yield(ctcp => $server{'channel'} => 'ACTION egy jól képzett nidzsát indított' => $1 => 'felé...');
+		return;
+	} elsif ($cmd =~ /^lancos\s+(.*)$/i) {
+		$irc->yield(ctcp => $server{'channel'} => 'ACTION egy láncos kutyát engedett' => $1 => 'irányába.');
 		return;
 	} elsif ($cmd =~ /^sendmajom\s+(.*)$/i) {
 		if ($1 eq "Pannika") {
@@ -1939,8 +1943,9 @@ sub do_meeting {
 		{
 			# hétvége
 		}
-		when(5) # péntek
+		when(5)
 		{
+			# péntek
 			# Szeminárium: Irinyi
 			if ($hour == 10 && $min == 20) {
 				$szoveg = "Nagymeeting! \($irinyisek\)";
