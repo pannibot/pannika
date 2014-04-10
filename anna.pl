@@ -876,6 +876,13 @@ sub parse_message {
 	} elsif ($cmd =~ /^viszlat\s+(.*)$/i) {
 		$irc->yield(kick => $server{'channel'} => $1 => $nick);
 		return;
+	} elsif ($cmd =~ /^orokhala\s+(.*)$/i) {
+		if ($1 eq "Pannika") {
+			$irc->yield(ctcp => $server{'channel'} => 'ACTION örök hálával tartozik' => $nick => 'számára...');
+		}
+		else {
+			$irc->yield(ctcp => $server{'channel'} => 'ACTION örök hálával tartozik' => $1 => 'számára...');	
+		}
 	}
 
 	return $out;
